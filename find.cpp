@@ -13,7 +13,12 @@ using namespace std;
 int maxSize = -2, minSize = -1;
 //bool equality = false;
 string nname = "";
+ino_t inum;
+bool flinum = false;
 bool flname = false;
+
+
+
 bool isDot(string name) {
     return ((name[0] == '.') && ((name.length() == 1) ||
                                  ((name[1] == '.') &&
@@ -27,7 +32,8 @@ bool goodSize(int size) {
 bool goodName (string name) {
   return (!flname)||(nname==name);
 }
-bool doodInum () {
+bool doodInum (ino_t n) {
+	return (!flinum)||(n == inum);
 }
 void dfs(string dirName) {
     DIR *dir = opendir(&dirName[0]);
@@ -49,7 +55,7 @@ void dfs(string dirName) {
                         perror("stat");
                         exit(EXIT_FAILURE);
                     }
-                    if (goodName(name)&&goodSize(sb.st_size)) cout<<fullName<<endl;
+                    if (goodName(name)&&goodSize(sb.st_size)&&doodInum(namelist[n]->d_ino)) cout<<fullName<<endl;
                 }
                 if (namelist[n]->d_type == DT_DIR) {
                     if (!isDot(name)) dfs(fullName);
@@ -116,6 +122,20 @@ int main(int argc, char *const argv[]) {
 		nname = argv[i];
 		flname = true;
 
+	} else if (!strcmp(argv[i], "-inum")) {
+		if (flinum) {
+			printf("Error: num of inode has alredy choosen\n");
+			return EXIT_FAILURE;
+		}
+		i++;
+		if (i > argc) {
+                	printf("Error: ad  Expected modificator to inum\n");
+                	return EXIT_FAILURE;
+            	}
+		string num = argv[i];
+		inum = atoi(num.c_str());
+		flinum = true;
+		
 	} else {
 		printf("Error: Wrong key of modificator\n");
                 return EXIT_FAILURE;
