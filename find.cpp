@@ -8,10 +8,12 @@
 #include <sys/stat.h>
 #include <iostream>
 #include <string.h>
+
 using namespace std;
 int maxSize = -2, minSize = -1;
-bool equality = false;
-
+//bool equality = false;
+string nname = "";
+bool flname = false;
 bool isDot(string name) {
     return ((name[0] == '.') && ((name.length() == 1) ||
                                  ((name[1] == '.') &&
@@ -22,7 +24,11 @@ bool goodSize(int size) {
     if ((maxSize == -2) && (maxSize == -1)) return true;
     return (size > minSize) && ((maxSize == -2) || (size < maxSize));
 }
-
+bool goodName (string name) {
+  return (!flname)||(nname==name);
+}
+bool doodInum () {
+}
 void dfs(string dirName) {
     DIR *dir = opendir(&dirName[0]);
     if (dir == NULL) {
@@ -35,18 +41,18 @@ void dfs(string dirName) {
         if (n > 0) {
             while (n--) {
                 string name = namelist[n]->d_name;
+		string fullName = dirName + '/' + name; 
                 if (((namelist[n]->d_type == DT_DIR) || ((namelist[n]->d_type == DT_REG))) && !(isDot(name))) {
+		     
                     struct stat sb;
-                    if (stat(&(dirName + '/' + name)[0], &sb) == -1) {
+                    if (stat(&fullName[0], &sb) == -1) {
                         perror("stat");
                         exit(EXIT_FAILURE);
                     }
-
-
-                    if (goodSize(sb.st_size)) printf("%s\n", namelist[n]->d_name);
+                    if (goodName(name)&&goodSize(sb.st_size)) cout<<fullName<<endl;
                 }
                 if (namelist[n]->d_type == DT_DIR) {
-                    if (!isDot(name)) dfs(dirName + '/' + name);
+                    if (!isDot(name)) dfs(fullName);
                 }
                 free(namelist[n]);
             }
@@ -57,7 +63,7 @@ void dfs(string dirName) {
 }
 
 int main(int argc, char *const argv[]) {
-	cout << argc << endl;
+    //cout << argc << endl;
     if (argc < 2) {
         printf("Error: Expected path of root in arguments\n");
         return EXIT_FAILURE;
@@ -69,19 +75,22 @@ int main(int argc, char *const argv[]) {
     }
     int i = 2;
     while (i < argc) {
-	cout << i << argv[i] << endl;
-        if (strcmp(argv[i],"-size")) {
-            i++;
+        if (!strcmp(argv[i], "-size")) {
+            i++; //3
+//cout << i << " ok\n";
             if (i > argc) {
                 printf("Error: ad  Expected modificator to size\n");
                 return EXIT_FAILURE;
             }
+            //i++;
             string modifier = argv[i];
+//cout << i << " ok\n";
             if (modifier.length() < 2) {
                 printf("Error: Wrong modificator to size\n");
                 return EXIT_FAILURE;
             }
-            int ssize = atoi(modifier.substr(1, modifier.length()).c_str());
+	string ss = modifier.substr(1, modifier.length());
+            int ssize = atoi(ss.c_str());
             if (modifier[0] == '-') {
                 if ((maxSize == -2) || (ssize < maxSize)) maxSize = ssize;
             } else if (modifier[0] == '+') {
@@ -93,8 +102,25 @@ int main(int argc, char *const argv[]) {
                 printf("Error: Expected modificator to size\n");
                 return EXIT_FAILURE;
             }
-		//i++;
-        } i++;
+            //i++;
+        } else if (!strcmp(argv[i], "-name")) {
+		if (flname) {
+			printf("Error: have alredy choosen -name\n");
+			return EXIT_FAILURE;
+		}
+		i++;
+		if (i > argc) {
+                	printf("Error: ad  Expected modificator to name\n");
+                	return EXIT_FAILURE;
+            	}	
+		nname = argv[i];
+		flname = true;
+
+	} else {
+		printf("Error: Wrong key of modificator\n");
+                return EXIT_FAILURE;
+	}
+        i++;
     }
     dfs(argv[1]);
 }
